@@ -1,122 +1,139 @@
 # edoc — Encounter Spec
 
-The encounter is edoc's atomic content unit. Everything — the fight screen, scoring, the mastery heatmap, spaced repetition, Campus reporting — reads from this shape. **Get it right before building anything that consumes it.**
+The encounter is edoc's atomic content unit. The fight screen, scoring, mastery heatmap, spaced repetition, and Campus reporting all read from this shape. **Shared contract between frontend and backend — neither side changes it alone.**
 
 ---
 
-## 1. Type definitions
+## 1. Types
 
 ```ts
-type EncounterId = string;        // "py.core.loops.04"
-type ConceptTag  = string;        // "for-loop", "range", "off-by-one"
-
-type Difficulty = 'intro' | 'standard' | 'hard' | 'boss';
+type EncounterId = string;   // "py.core.loops.04"
+type ConceptTag  = string;   // "for-loop", "off-by-one"
+type Difficulty  = 'intro' | 'standard' | 'hard' | 'boss';
+type Phase       = 'approach' | 'surface';
 
 interface Encounter {
   id: EncounterId;
-  language: string;               // "python"
-  module: string;                 // "py.core" | "py.web"
+  language: string;              // "python"
+  planet: string;                // "python-prime"
+  module: string;                // "py.core" | "py.web"
+  phase: Phase;                  // approach = journey obstacle; surface = planet module
   difficulty: Difficulty;
-  conceptTags: ConceptTag[];      // drives mastery + spaced repetition
+  conceptTags: ConceptTag[];
 
-  brief: string;                  // markdown, shown above the editor
+  brief: string;                 // markdown, shown above the console
   starterCode: string;
-  solutionCode: string;           // never sent to the client
+  solutionCode: string;          // never sent to the client
   tests: Test[];
-  hintCards: HintCard[];
-  monster: Monster;
-  failureMap: FailureRule[];      // makes "boss teaches you" possible
+  hints: Hint[];                 // delivered by the companion robot
+  hostile: Hostile;
+  failureMap: FailureRule[];
 
-  artifact?: Artifact;            // boss encounters only
+  artifact?: Artifact;           // boss encounters only
   estimatedMinutes: number;
 }
 ```
 
 ### Test
-
 ```ts
 interface Test {
   id: string;
-  label: string;                  // "Handles an empty list" — shown to the user
-  hidden: boolean;                // hidden tests only reveal pass/fail, not input
-  damage: number;                 // HP removed from the monster when this passes
-  conceptTags: ConceptTag[];      // which concept this test actually probes
+  label: string;        // "Handles an empty list" — behaviour, never implementation
+  hidden: boolean;      // hidden tests reveal pass/fail only
+  damage: number;       // integrity removed from the hostile when this passes
+  conceptTags: ConceptTag[];
 }
 ```
 
-Damage across all tests in an encounter must sum to exactly `monster.hp`. Enforce this in a content validation script — it is the most common authoring bug.
+Damage across all tests must sum to exactly `hostile.integrity`. Enforce in CI — most common authoring bug.
 
-### HintCard
-
+### Hint
+Delivered by the companion robot, not as a card deck.
 ```ts
-interface HintCard {
+interface Hint {
   id: string;
   title: string;
-  body: string;                   // markdown, max ~240 chars — it's a card, not a page
-  skeleton?: string;              // inserted on swipe-up. MUST contain blanks.
+  body: string;          // max ~240 chars — spoken by the companion
+  skeleton?: string;     // inserted into the console. MUST contain blanks.
   conceptTags: ConceptTag[];
-  cost: number;                   // shard cost in Ranked; 0 in Practice
+  cost: number;          // shards in Ranked; 0 in Practice
 }
 ```
 
-**`skeleton` must never be a working solution.** Use `___` or `# your code here` placeholders. If the card writes the code, the learning didn't happen.
+**`skeleton` must never be a working solution.** Use `___` or `# your code here`. If the hint writes the code, the learning didn't happen.
 
-### Monster
-
+### Hostile
 ```ts
-interface Monster {
+interface Hostile {
   id: string;
-  name: string;                   // "The Loop King"
-  hp: number;
-  sprite: string;
+  name: string;          // "Drift Wraith"
+  kind: 'alien' | 'ship' | 'hazard';
+  integrity: number;
+  sprite: string;        // Rive state machine: idle | hit | attack | destroyed
   attacks: Attack[];
 }
 
 interface Attack {
   id: string;
-  damage: number;                 // HP removed from the player
-  message: string;                // in-character, but must name the real problem
+  damage: number;        // hull integrity removed from the player
+  message: string;       // in character, but names the real problem
   trigger: 'test-fail' | 'timeout' | 'runtime-error';
 }
 ```
 
-Attack `message` is flavor **plus** signal: "The Loop King coils tighter — your loop never terminates." Never flavor alone.
+Attack `message` is flavour **plus** signal: "The Wraith coils tighter — your range stops one step short." Never flavour alone.
 
 ### FailureRule
-
-This is the piece that makes defeat instructive rather than punishing.
-
+Turns defeat into a lesson.
 ```ts
 interface FailureRule {
-  match: {
-    testId?: string;
-    errorType?: string;           // "IndexError", "SyntaxError"
-    pattern?: string;             // regex against stderr
-  };
+  match: { testId?: string; errorType?: string; pattern?: string };
   concept: ConceptTag;
-  lessonCardId: string;           // HintCard surfaced on defeat
-  rematchVariant?: string;        // alternate params so memorizing fails
+  hintId: string;          // surfaced by the companion on defeat
+  rematchVariant?: string; // alternate params so memorising fails
 }
 ```
-
-Rules are evaluated in order; first match wins. Every encounter needs a catch-all rule at the end.
+Evaluated in order, first match wins. Every encounter needs a catch-all last.
 
 ### Artifact
-
 ```ts
 interface Artifact {
-  name: string;                   // "wordfreq CLI"
+  name: string;          // "wordfreq CLI"
   description: string;
   files: { path: string; content: string }[];
   repoTemplate?: string;
 }
 ```
-
-Boss encounters only. This is what makes "resume disguised as a player card" literally true.
+Boss encounters only. This is what makes the certificate evidence-backed.
 
 ---
 
-## 2. Runtime contract
+## 2. Planet & module structure
+
+```ts
+interface Planet {
+  id: string;            // "python-prime"
+  language: string;
+  name: string;          // "Python Prime"
+  worldType: 'temperate' | 'volcanic' | 'ice' | 'gas-giant' | 'ocean' | 'desert' | 'crystalline';
+  accent: string;        // token key, not a hex
+  tracks: string[];      // max 3
+  features: PlanetFeature[];
+}
+
+interface PlanetFeature {
+  id: string;
+  moduleId: string;      // the module this feature represents
+  label: string;         // "Northern Geyser Field"
+  hotspot: { x: number; y: number };  // % coords on the surface scene
+}
+```
+
+**Features must match the world type.** Ice worlds have geysers, crevasses, sub-surface caverns. Gas giants have storm bands and moons. Volcanic worlds have lava tubes and ash plains. Never apply Earth features to worlds that would not have them.
+
+---
+
+## 3. Runtime contract
 
 The frontend talks to execution through exactly this interface. **Build the entire fight screen against a mock of it.**
 
@@ -138,74 +155,37 @@ interface RunResult {
 interface TestResult {
   testId: string;
   passed: boolean;
-  errorLine?: number;             // drives the in-editor damage highlight
+  errorLine?: number;   // drives the in-console damage highlight
   message?: string;
 }
 
 declare function runTests(req: RunRequest): Promise<RunResult>;
 ```
 
-`errorLine` is what CodeMirror uses to flash the offending line. Without it the damage effect has nowhere to land.
+`errorLine` is what CodeMirror uses to flash the offending line — without it the damage effect has nowhere to land.
 
-**Practice** may resolve in-browser via WASM. **Ranked and Proctored must resolve server-side** — client results are never trusted for scoring.
-
----
-
-## 3. Example encounter
-
-```json
-{
-  "id": "py.core.loops.04",
-  "language": "python",
-  "module": "py.core",
-  "difficulty": "standard",
-  "conceptTags": ["for-loop", "accumulator", "off-by-one"],
-  "brief": "Return the sum of every even number from 1 to n, inclusive.",
-  "starterCode": "def sum_evens(n):\n    total = 0\n    # your code here\n    return total",
-  "estimatedMinutes": 6,
-  "monster": {
-    "id": "loop-king", "name": "The Loop King", "hp": 100, "sprite": "loop_king",
-    "attacks": [
-      { "id": "coil", "damage": 15, "trigger": "test-fail",
-        "message": "The Loop King coils tighter — your range stops one step short." },
-      { "id": "crush", "damage": 30, "trigger": "timeout",
-        "message": "Crushed. That loop never ends." }
-    ]
-  },
-  "tests": [
-    { "id": "t1", "label": "sum_evens(10) is 30", "hidden": false, "damage": 30, "conceptTags": ["for-loop"] },
-    { "id": "t2", "label": "Includes n when n is even", "hidden": false, "damage": 40, "conceptTags": ["off-by-one"] },
-    { "id": "t3", "label": "Returns 0 for n = 0", "hidden": true, "damage": 30, "conceptTags": ["accumulator"] }
-  ],
-  "hintCards": [
-    { "id": "h1", "title": "range is exclusive", "body": "`range(1, 5)` yields 1,2,3,4 — the stop value is left out. To include n, use `range(1, n + 1)`.", "conceptTags": ["off-by-one"], "cost": 0 },
-    { "id": "h2", "title": "Accumulator pattern", "body": "Start at zero outside the loop, add inside it.", "skeleton": "total = 0\nfor i in ___:\n    if ___:\n        total += ___", "conceptTags": ["accumulator"], "cost": 1 }
-  ],
-  "failureMap": [
-    { "match": { "testId": "t2" }, "concept": "off-by-one", "lessonCardId": "h1", "rematchVariant": "n=14" },
-    { "match": { "errorType": "TypeError" }, "concept": "accumulator", "lessonCardId": "h2" },
-    { "match": {}, "concept": "for-loop", "lessonCardId": "h2" }
-  ]
-}
-```
+**Practice** may resolve in-browser via WASM. **Ranked and Proctored must resolve server-side.** Client results are never trusted for scoring.
 
 ---
 
 ## 4. Authoring rules
 
-1. Test damage sums to exactly `monster.hp`. Validate in CI.
-2. Every encounter has at least one catch-all `failureMap` rule.
-3. Test `label` describes behavior, never implementation: "Handles an empty list", not "assert f([]) == 0".
+1. Test damage sums to exactly `hostile.integrity`. Validate in CI.
+2. Every encounter has a catch-all `failureMap` rule.
+3. Test `label` describes behaviour, never implementation.
 4. Hint skeletons always contain blanks.
-5. `conceptTags` come from a controlled vocabulary per language. Free-text tags break the mastery heatmap.
-6. Boss encounters must define an `artifact`.
-7. 3–8 tests per encounter. Fewer feels arbitrary; more turns the HP bar into noise.
+5. `conceptTags` come from a controlled vocabulary per language — free text breaks the mastery heatmap.
+6. Boss encounters define an `artifact`.
+7. 3–8 tests per encounter.
+8. Attack messages name the real problem, not just flavour.
+9. `phase: 'approach'` encounters are the 1–2 obstacles before landing; everything else is `'surface'`.
 
 ---
 
 ## 5. Why this shape
 
-- `conceptTags` on both tests and encounters is what lets Campus mode show *which concept* a student is failing, not just which exercise.
-- `failureMap` turns a loss into a lesson. Without it the monster can only say "wrong."
-- `rematchVariant` stops players from memorizing an answer to beat a boss.
-- Separating `tests[].damage` from `monster.hp` means the HP bar reflects genuine partial progress — the single strongest feedback signal in the fight loop.
+- `conceptTags` on both tests and encounters lets Campus show *which concept* a student is failing, not just which exercise.
+- `failureMap` turns a loss into a lesson — without it the hostile can only say "wrong."
+- `rematchVariant` stops players memorising an answer.
+- Separating `tests[].damage` from `hostile.integrity` means the bar reflects genuine partial progress, the strongest feedback signal in the loop.
+- `phase` and `PlanetFeature` let the same encounter data drive both the journey and the surface map without forking content.

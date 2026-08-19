@@ -1,131 +1,192 @@
 # edoc — Product Spec
 
-Product context for anyone (human or agent) working on this repo. Read this before `DESIGN.md`.
+Product context. Read this before `DESIGN.md` or `SPEC-encounter.md`.
 
 ---
 
 ## 1. What edoc is
 
-A gamified platform for learning programming. You pick a language, fight your way through it, and come out with proof you can actually code.
+A platform for learning to code, built as a space exploration game.
 
-The core loop is combat: you write code in an editor, a monster's health drops when your tests pass, and it attacks when they fail. Micro-lessons arrive as swipeable cards under the editor. Winning drops cosmetic loot. Your profile is an eSports-style player card, not a résumé.
+You board a ship. You pick a character. The galaxy map is a solar system where **every planet is a programming language**. You choose a destination and fly there — and the journey is the learning. Obstacles en route (meteor fields, hull breaches, hostile ships) are coding encounters: you write code in the ship's console, working code fires, broken code takes damage. Clear the approach and you land, then explore the planet's surface, where **each natural feature of that world is a module**.
 
-**The one-line pitch:** guided learning with an arcade combat loop, real multiplayer, and an evidence-backed certificate.
+Your companion robot delivers hints. Your progress is a pilot profile. Completing a language earns a certificate backed by real performance data and working code.
+
+**One line:** learning to code as a space voyage — with real multiplayer, real artifacts, and a credential that means something.
 
 ---
 
 ## 2. Who it's for
 
-| Audience | What they want | Primary mode |
+| Audience | Wants | Mode |
 |---|---|---|
-| Total beginners | Not to quit in week one | Practice |
-| Hobbyists / enthusiasts | Loot, friends, streaks | Practice + clans |
+| Beginners | Not to quit in week one | Practice |
+| Hobbyists | Loot, crew, streaks | Practice + crews |
 | Working developers | Sharpening, competition | Ranked |
-| Job seekers | A credential with evidence behind it | Proctored |
-| Universities / colleges | Assignable curriculum + integrity | Campus |
+| Job seekers | A credential with evidence | Proctored |
+| Universities | Assignable curriculum + integrity | Campus |
 
-One world, four modes. Do not build four products.
+One universe, four modes. Not four products.
 
 ---
 
 ## 3. The four modes
 
-**Practice** — no timer, no penalties, free hints, monster acts as tutor. Where beginners live. Never gated, never walled.
+**Practice** — no timer, no penalties, free hints, companion acts as tutor. Never gated, never walled.
 
-**Ranked** — PvP duels, code golf, bug-race, seasonal ladder, clan raids. Scored server-side.
+**Ranked** — ship duels, crew battles, seasonal ladder. Scored server-side.
 
-**Proctored** — full-screen lock, external paste blocked, timed. **This is the only place lockdown applies.** Produces certificates.
+**Proctored** — fullscreen lock, external paste blocked, timed, exit penalties. **The only place lockdown applies.** Produces certificates. This is what universities pay for.
 
-**Campus** — instructor dashboard, roster import, assignments, per-concept mastery heatmaps, LMS grade passback (LTI). B2B. Build last, but design the data model for it now — cohorts and per-concept mastery are painful to retrofit.
+**Campus** — instructor dashboard, rosters, assignments, per-concept mastery heatmaps, LMS grade passback. Build last; design the data model now.
 
 ---
 
-## 4. Content model
+## 4. The journey structure
+
+```
+Universe map  →  choose a planet (language)
+     ↓
+Approach      →  1–2 encounters as obstacles (meteors, hostiles, breakdowns)
+     ↓
+Landing       →  cinematic, skippable
+     ↓
+Surface       →  planet features = modules; explore or go straight to work
+     ↓
+Complete      →  language certificate, next planet unlocks
+```
+
+### Planets are languages
+
+| Language | World | Feel |
+|---|---|---|
+| Python | Temperate, canyon-carved | Approachable, warm |
+| JavaScript | Volcanic, restless | Fast, chaotic |
+| TypeScript | Crystalline, ordered | Structured, cold |
+| Go | Ice world, geysers | Clean, efficient |
+| Rust | Iron desert, storms | Harsh, precise |
+| SQL | Ocean world, deep trenches | Vast, layered |
+
+**Planet features are specific to the world, never generic.** A gas giant's modules are storm bands and moons. An ice world's are crevasses, geysers, and sub-surface caverns. A volcanic world's are lava tubes and ash plains. A ringed world's are ring segments and shepherd moons. Do not apply Earth features (trees, fruit, flowers) to worlds that would not have them — that was an illustrative example only.
+
+Each planet needs its own feature vocabulary mapped to its modules, defined alongside its content.
+
+---
+
+## 5. Battles
+
+### Solo
+Alien or environmental hazard. Write code against a timer. Working code fires; failing tests are counter-attacks that damage your hull.
+
+### Duel (1v1)
+Ship versus ship. Two formats:
+- **Race** — one problem, first to solve wins
+- **Gauntlet** — 2–3 problems, with **live opponent progress visible** ("they're on 2, you're on 1"), plus chat and quick reactions. BGMI-style awareness is the point.
+
+### Crew (team)
+4 players per ship, 8 per match; scales to 25 crews per 100 players. The crew shares a ship and splits the problem set. Boarding is a scene — crew take stations, can talk, tour the ship, or skip straight in.
+
+---
+
+## 6. Characters and the companion
+
+**Character:** chosen at first run — base explorer models (boy/girl). Cosmetics unlock through play: helmets, suits, visors, patches, colourways. Premium characters unlock at higher tiers.
+
+**All characters must be original.** No licensed IP — no Marvel, Star Wars, or any existing franchise character, as reference tone or as an unlockable. Guardians of the Galaxy and Star Wars work as *mood* references only: scrappy crew, humour, worn-in retro-futurism.
+
+**Companion robot:** earned after a points threshold. Delivers hints, explanations, and code skeletons from a fixed spot on the console. Has a name and a personality. This replaces the earlier "hint card deck" — same function, character attached.
+
+---
+
+## 7. Content model
 
 Every language splits in two:
 
-- **Core module** — syntax, control flow, data structures, functions, error handling, OOP. Finite and completable. Same shape for every language.
-- **Applied modules** — where the language plugs into a stack. `Python Web`, `Python Data`, `JS DOM`, `JS Node`. Optional.
+- **Core module** — syntax, control flow, data structures, functions, error handling, OOP. Finite and completable, same shape for every language.
+- **Applied modules** — where the language plugs into a stack (`Python Web`, `JS DOM`). Optional.
 
-**Tracks** (frontend, backend, data, mobile) are curated *ordered sequences* of modules across languages — not tags. Example: Backend = Python Core → Python Web → SQL Core → APIs.
-
-A language may appear in at most **3 primary tracks** in the UI.
+**Tracks** (frontend, backend, data, mobile) are curated ordered sequences across languages, not tags. A language appears in at most 3 primary tracks.
 
 ### Certificates
 
 | Certificate | Earned by | Weight |
 |---|---|---|
-| **Language** | Complete one language's Core module | Motivational milestone |
-| **Stack** | Complete a full track | The one that carries weight |
+| **Language** | Complete one language's Core | Motivational milestone |
+| **Stack** | Complete a full track | Carries real weight |
 
-Projects are **not required** for either. But a Stack Certificate earned *with* a project is visually distinct, links to the artifact, and ranks higher in the showcase.
+Projects are **not required** for either, but a Stack Certificate earned with a project is visually distinct, links to the artifact, and ranks higher in the showcase.
 
-Every certificate displays performance data, not just a completion date: `Cleared 148 encounters · 96% first-attempt`. That's what separates it from a completion checkbox.
-
----
-
-## 5. Projects (optional at every tier)
-
-Three tiers:
-
-1. **Boss artifacts** — every boss fight already produces something real (a CLI, a parser, a small API). Automatic; no opt-in. Ensures everyone has a portfolio even if they never choose to build.
-2. **Guided builds** — step-by-step, produces a shippable thing. Unlocked as loot ("blueprint drop") rather than assigned.
-3. **Free build (the Workshop)** — blank multi-file sandbox, your own idea. Publishable to the showcase feed.
-
-Optional but *visible*: the player card shows a conspicuously empty project slot, and no project means no presence in the showcase feed.
+Every certificate shows performance data: `Cleared 148 encounters · 96% first-attempt`.
 
 ---
 
-## 6. What makes edoc different from Codedex et al.
+## 8. Projects (optional at every tier)
 
-1. **Multiplayer** — duels, clan raids on a shared multi-file repo, ghost replays. Every competitor is single-player.
+1. **Salvage artifacts** — every boss encounter produces something real automatically. No opt-in required, so everyone has a portfolio.
+2. **Guided builds** — step-by-step, unlocked as loot ("blueprint recovered"), never assigned.
+3. **Free build (the Workshop)** — blank multi-file sandbox, publishable to the showcase.
+
+Optional but visible: the pilot profile shows a conspicuously empty project slot, and no project means no presence in the showcase.
+
+---
+
+## 9. Sound
+
+Present throughout with a **global on/off toggle**, defaulting to off with a single prompt to enable.
+
+Ship hum, console clicks, hull impacts, engine burns, docking, loot chimes. Typed-text sequences carry keyboard sound.
+
+**Silent while coding.** No audio while the console has focus. Same principle as the visual workspace rule.
+
+---
+
+## 10. What makes edoc different
+
+1. **Multiplayer** — duels, crew battles, live opponent awareness, ghost replays. Every competitor is single-player.
 2. **Artifacts over badges** — the certificate links to working code.
-3. **Failure is the content** — debugging *is* the combat system. Bugs are the lesson, not the punishment.
+3. **Failure is the content** — debugging *is* the combat system.
+4. **The journey is the curriculum** — progression is spatial and legible, not a progress bar.
 
 ---
 
-## 7. Screen layout
-
-Three zones:
-
-- **Zone A — Language coaster.** Scroll-driven 3D track of languages, categorized by track. Selection floods the UI with that language's accent color.
-- **Zone B — Fight.** Editor + monster + HP bar + test output. The core screen.
-- **Zone C — Hint deck.** Swipeable micro-lesson cards under the editor. Left discards, right saves, up inserts a code skeleton.
-
-Plus a global ticker (lobby only, hidden during fights) and the player card profile.
-
----
-
-## 8. Technical decisions already made
+## 11. Technical decisions
 
 **Frontend:** Next.js (App Router) + Tailwind + Zustand + CodeMirror 6.
 
-**Editor is CodeMirror 6, not Monaco** — 200KB vs 5MB, touch-viable, and runtime-swappable theming, which the loot economy depends on.
+**Editor is CodeMirror 6, not Monaco** — 200KB vs 5MB, touch-viable, runtime-swappable theming.
 
-**Code execution is hybrid:**
-- Browser WASM (Pyodide / QuickJS) for Practice — instant feedback, zero server cost
-- Server-side execution for anything scored (Ranked, Proctored, certificates) — client-side results are never trusted
+**The universe is 2.5D, not real-time 3D.** This is the single most important scoping decision:
 
-For MVP, use a hosted execution API rather than building container infrastructure.
+| Feels like | Actually is |
+|---|---|
+| 3D cockpit | 4–5 parallax layers on mouse and scroll |
+| Flying to a planet | Pre-rendered video, skippable |
+| Boarding, taking stations | Pre-rendered cutscene, skippable |
+| Explorable surface | Illustrated scene with hotspots |
+| Character customization | 2D character with layered sprites |
+| Companion robot | Rive state machine |
 
-**Anti-cheat is scoped to Proctored only.** Blocking paste globally punishes normal developer behavior (reading docs, adapting snippets) and leaks anyway. The real integrity signal is keystroke/process replay: a cheater's transcript is one giant paste, a learner's is iteration. Passive, and stronger.
+Real-time 3D buys free camera movement, which this product does not need. Parallax runs at 60fps anywhere; WebGL does not.
 
----
+**Code execution is hybrid:** browser WASM for Practice (instant, free), server-side for anything scored. Client results are never trusted. Use a managed execution service (Piston/Judge0) for MVP — do not build sandboxing in-house.
 
-## 9. Build order
-
-1. One language deep — Python, ~150 encounters with real test suites
-2. Fight loop + card deck (mocked runtime first)
-3. Duels and clans — retention
-4. More languages + the coaster
-5. Proctored mode + certificates + artifact pages
-6. Campus dashboard
+**Anti-cheat is Proctored-only.** Fullscreen API plus Page Visibility API detect exits; violations are logged and penalised. Practice and Ranked stay completely open — blocking paste globally punishes normal developer behaviour and leaks anyway. The stronger integrity signal is keystroke replay: a cheater's transcript is one paste, a learner's is iteration.
 
 ---
 
-## 10. Non-negotiables
+## 12. Non-negotiables
 
-- **Never gate practice.** Loot is gated behind keys; learning never is. The most motivated user must never hit a locked door.
-- **Errors are not punishment.** The monster attacks on *failing tests*, not on syntax errors mid-keystroke. Reading a stack trace is the skill being taught.
-- **On defeat, the boss teaches.** Show the concept that killed you, then rematch with different parameters so memorizing the answer doesn't work.
-- **Accessibility is a launch requirement,** not a polish item. Universities will ask during procurement.
+- **Never gate practice.** Loot is gated; learning never is.
+- **Errors are not punishment.** Damage comes from *failing tests*, not syntax errors mid-keystroke.
+- **On defeat, teach.** Show the concept that killed you, then rematch with different parameters.
+- **The console stays calm.** When someone is writing code, the ship goes quiet — visually and audibly.
+- **All assets original.** No licensed characters, ships, or worlds.
+- **Accessibility is a launch requirement.** Universities ask during procurement.
+
+---
+
+## 13. Scope warning
+
+The full vision — real-time 3D, character models, explorable surfaces, cinematic sequences, team multiplayer — is a game studio project: 18–24 months, 8–12 people including 3D artists and a gameplay engineer.
+
+The 2.5D approach in §11 brings a credible v1 into range, but this is still meaningfully larger than a website. Any timeline given to a client must reflect the scope actually being built, and content authoring (~150 encounters per language, 8–10 weeks each) remains the critical path regardless of engineering speed.
